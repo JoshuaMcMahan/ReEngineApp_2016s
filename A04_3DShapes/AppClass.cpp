@@ -1,7 +1,7 @@
 #include "AppClass.h"
 void AppClass::InitWindow(String a_sWindowName)
 {
-	super::InitWindow("3D Shapes"); // Window Name
+	super::InitWindow("McMaJ - A04: 3D Shapes"); // Window Name
 }
 
 void AppClass::InitVariables(void)
