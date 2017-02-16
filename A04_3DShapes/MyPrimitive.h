@@ -107,6 +107,10 @@ private:
 	OUTPUT: ---
 	*/
 	void AddQuad(vector3 a_vBottomLeft, vector3 a_vBottomRight, vector3 a_vTopLeft, vector3 a_vTopRight);
+	/*
+	Adds a triangle based on 3 vectors;
+	*/
+	void AddTri(vector3 a_vBottomLeft, vector3 a_vBottomRight, vector3 a_vTopLeft);
 };
 
 #endif //__MYPRIMITIVE_H_
