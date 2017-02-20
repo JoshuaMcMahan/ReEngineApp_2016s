@@ -136,10 +136,12 @@ void MyPrimitive::GenerateCone(float a_fRadius, float a_fHeight, int a_nSubdivis
 
 	for (int i = 1; i < a_nSubdivisions; i++)
 	{
-		AddTri(point[0], point[i], point[i + 1]);
+		AddTri(point[i + 1], point[i], point[0]); // Base
+		AddTri(vector3(0,0,a_fHeight), point[i], point[i + 1]); //Cone Part Thing
 	}
 	//Last point
-	AddTri(point[0], point[a_nSubdivisions], point[1]);
+	AddTri(point[1], point[a_nSubdivisions], point[0]); // Base
+	AddTri(vector3(0, 0, a_fHeight), point[a_nSubdivisions], point[1]); // Cone Part Thing
 
 	//Your code ends here
 	CompileObject(a_v3Color);
@@ -159,12 +161,32 @@ void MyPrimitive::GenerateCylinder(float a_fRadius, float a_fHeight, int a_nSubd
 	//3--2
 	//|  |
 	//0--1
-	vector3 point0(-fValue, -fValue, fValue); //0
-	vector3 point1(fValue, -fValue, fValue); //1
-	vector3 point2(fValue, fValue, fValue); //2
-	vector3 point3(-fValue, fValue, fValue); //3
+	std::vector<vector3> point;
+	std::vector<vector3> point2;
+	float theta = a_fRadius;
+	float steps = 2 * PI / static_cast<float>(a_nSubdivisions);
 
-	AddQuad(point0, point1, point3, point2);
+	//Keeps the second for from going out of bounds.
+	point.push_back(vector3(0.0f));
+	point2.push_back(vector3(0,0,a_fHeight));
+
+	for (int i = 0; i < a_nSubdivisions; i++)
+	{
+		point.push_back(vector3(cos(theta), sin(theta), 0)); // Base 1
+		point2.push_back(vector3(cos(theta), sin(theta), a_fHeight)); // Base 2
+		theta += steps;
+	}
+
+	for (int i = 1; i < a_nSubdivisions; i++)
+	{
+		AddTri(point[i + 1], point[i], point[0]); // Base 1
+		AddTri(point2[0], point2[i], point2[i + 1]); // Base 2
+		AddQuad(point[i], point[i + 1], point2[i], point2[i + 1]);
+	}
+	//Last point
+	AddTri(point[1], point[a_nSubdivisions], point[0]); // Base 1
+	AddTri(point2[0], point2[a_nSubdivisions], point2[1]); // Base 2
+	AddQuad(point2[1], point2[a_nSubdivisions], point[1], point[a_nSubdivisions]);
 
 	//Your code ends here
 	CompileObject(a_v3Color);
@@ -184,12 +206,50 @@ void MyPrimitive::GenerateTube(float a_fOuterRadius, float a_fInnerRadius, float
 	//3--2
 	//|  |
 	//0--1
-	vector3 point0(-fValue, -fValue, fValue); //0
-	vector3 point1(fValue, -fValue, fValue); //1
-	vector3 point2(fValue, fValue, fValue); //2
-	vector3 point3(-fValue, fValue, fValue); //3
+	std::vector<vector3> point;
+	std::vector<vector3> point2;
+	std::vector<vector3> point3;
+	std::vector<vector3> point4;
+	float thetaInner = a_fInnerRadius;
+	float thetaOuter = a_fOuterRadius;
+	float steps = 2 * PI / static_cast<float>(a_nSubdivisions);
 
-	AddQuad(point0, point1, point3, point2);
+	//Keeps the second for from going out of bounds.
+	point.push_back(vector3(0.0f));
+	point2.push_back(vector3(0.0f));
+	point3.push_back(vector3(0.0f));
+	point4.push_back(vector3(0.0f));
+
+	for (int i = 0; i < a_nSubdivisions; i++)
+	{
+		point.push_back(vector3(cos(thetaOuter), sin(thetaOuter), 0)); // Outside Rim 1
+		point2.push_back(vector3(cos(thetaOuter), sin(thetaOuter), a_fHeight)); // Outside Rim 2
+		point3.push_back(vector3(cos(thetaInner)/2, sin(thetaInner)/2, 0)); // Inside Rim 1
+		point4.push_back(vector3(cos(thetaInner)/2, sin(thetaInner)/2, a_fHeight)); // Inside Rim 2
+		thetaInner += steps;
+		thetaOuter += steps;
+	}
+
+	for (int i = 1; i < a_nSubdivisions; i++)
+	{
+		AddQuad(point[i], point[i + 1], point2[i], point2[i + 1]); // Outer Faces
+		AddQuad(point4[i], point4[i + 1], point3[i], point3[i + 1]); // Inner Faces
+
+		//Top Faces
+		AddQuad(point3[i], point3[i + 1], point[i], point[i + 1]);
+
+		//Bottom Faces
+		AddQuad(point2[i], point2[i + 1], point4[i], point4[i + 1]);
+
+	}
+
+	//Last Quads Outside
+	AddQuad(point2[1], point2[a_nSubdivisions], point[1], point[a_nSubdivisions]);
+	AddQuad(point3[1], point3[a_nSubdivisions], point4[1], point4[a_nSubdivisions]);
+
+	//Last Quads Top/Bottom
+	AddQuad(point[1], point[a_nSubdivisions], point3[1], point3[a_nSubdivisions]);
+	AddQuad(point4[1], point4[a_nSubdivisions], point2[1], point2[a_nSubdivisions]);
 
 	//Your code ends here
 	CompileObject(a_v3Color);
