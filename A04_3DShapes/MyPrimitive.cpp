@@ -306,12 +306,129 @@ void MyPrimitive::GenerateSphere(float a_fRadius, int a_nSubdivisions, vector3 a
 	//3--2
 	//|  |
 	//0--1
-	vector3 point0(-fValue, -fValue, fValue); //0
-	vector3 point1(fValue, -fValue, fValue); //1
-	vector3 point2(fValue, fValue, fValue); //2
-	vector3 point3(-fValue, fValue, fValue); //3
+	//Solution from class:
 
-	AddQuad(point0, point1, point3, point2);
+	vector3 pointA(-fValue, -fValue, fValue); //0
+	vector3 pointB(fValue, -fValue, fValue); //1
+	vector3 pointC(-fValue, fValue, fValue); //2
+
+											 //left to right List of vector3
+	std::vector<vector3> vectorAB;
+	vectorAB.push_back(pointA);
+	for (int i = 0; i < a_nSubdivisions; i++)
+	{
+		vector3 temp(pointB - pointA);
+		temp /= a_nSubdivisions + 1;
+		temp *= (i + 1);
+		vectorAB.push_back(temp + pointA);
+	}
+	vectorAB.push_back(pointB);
+
+	//height increments
+	float fHeight = pointC.y - pointA.y;
+	fHeight /= a_nSubdivisions + 1;
+
+	//List of Lists
+	std::vector<std::vector<vector3>> list;
+	list.push_back(vectorAB);
+	for (int j = 0; j < a_nSubdivisions + 1; j++)
+	{
+		std::vector<vector3> temp = list[0];
+		float increment = fHeight * (j + 1);
+		for (int i = 0; i < a_nSubdivisions + 2; i++)
+		{
+			temp[i].y += increment;
+		}
+		list.push_back(temp);
+	}
+
+	//Creating the patch of quads
+	for (int j = 0; j < a_nSubdivisions + 1; j++)
+	{
+		for (int i = 0; i < a_nSubdivisions + 1; i++)
+		{
+			AddQuad(list[j][i], list[j][i + 1], list[j + 1][i], list[j + 1][i + 1]);
+		}
+	}
+
+	//normalizing the vectors to make them round
+	for (uint i = 0; i < m_uVertexCount; i++)
+	{
+		m_lVertexPos[i] = glm::normalize(m_lVertexPos[i]);
+		m_lVertexPos[i] *= a_fRadius;
+	}
+
+	//RightSideFace
+	int nVert = m_uVertexCount;
+	std::vector<vector3> right;
+	for (int i = 0; i < nVert; i++)
+	{
+		matrix4 rotation;
+		rotation = glm::rotate(matrix4(1.0f), 90.0f, vector3(0.0f, 1.0f, 0.0f));
+		right.push_back(static_cast <vector3>(rotation * glm::vec4(m_lVertexPos[i], 1.0f)));
+	}
+
+
+	for (int i = 0; i < nVert; i++)
+	{
+		AddVertexPosition(right[i]);
+	}
+
+	//LeftSideFace
+	std::vector<vector3> left;
+	for (int i = 0; i < nVert; i++)
+	{
+		matrix4 rotation;
+		rotation = glm::rotate(matrix4(1.0f), -90.0f, vector3(0.0f, 1.0f, 0.0f));
+		left.push_back(static_cast <vector3>(rotation * glm::vec4(m_lVertexPos[i], 1.0f)));
+	}
+
+	for (int i = 0; i < nVert; i++)
+	{
+		AddVertexPosition(left[i]);
+	}
+
+	//BackSideFace
+	std::vector<vector3> back;
+	for (int i = 0; i < nVert; i++)
+	{
+		matrix4 rotation;
+		rotation = glm::rotate(matrix4(1.0f), 180.0f, vector3(0.0f, 1.0f, 0.0f));
+		back.push_back(static_cast <vector3>(rotation * glm::vec4(m_lVertexPos[i], 1.0f)));
+	}
+
+	for (int i = 0; i < nVert; i++)
+	{
+		AddVertexPosition(back[i]);
+	}
+
+	//TopSideFace
+	std::vector<vector3> top;
+	for (int i = 0; i < nVert; i++)
+	{
+		matrix4 rotation;
+		rotation = glm::rotate(matrix4(1.0f), -90.0f, vector3(1.0f, 0.0f, 0.0f));
+		top.push_back(static_cast <vector3>(rotation * glm::vec4(m_lVertexPos[i], 1.0f)));
+	}
+
+	for (int i = 0; i < nVert; i++)
+	{
+		AddVertexPosition(top[i]);
+	}
+
+	//BottomSideFace
+	std::vector<vector3> bottom;
+	for (int i = 0; i < nVert; i++)
+	{
+		matrix4 rotation;
+		rotation = glm::rotate(matrix4(1.0f), 90.0f, vector3(1.0f, 0.0f, 0.0f));
+		bottom.push_back(static_cast <vector3>(rotation * glm::vec4(m_lVertexPos[i], 1.0f)));
+	}
+
+	for (int i = 0; i < nVert; i++)
+	{
+		AddVertexPosition(bottom[i]);
+	}
 
 	//Your code ends here
 	CompileObject(a_v3Color);

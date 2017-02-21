@@ -12,14 +12,14 @@ void AppClass::InitVariables(void)
 	m_pPrimitive->GenerateCone(1.0f, 1.0f, 12, REGREEN);
 	m_pPrimitive->GenerateCylinder(1.0f, 2.0f, 7, REBLUE);
 	m_pPrimitive->GenerateTube(1.0f, 0.3f, 2.0f, 7, REYELLOW);
-	//m_pPrimitive->GenerateSphere(1.0f, 3, RERED); //Couldn't Figure it out...
+	m_pPrimitive->GenerateSphere(1.0f, 3, RERED); //Couldn't Figure it out...
 }
 
 void AppClass::Update(void)
 {
 	//Update the system's time
 	m_pSystem->UpdateTime();
-
+	
 	//Update the mesh manager's time without updating for collision detection
 	m_pMeshMngr->Update();
 
