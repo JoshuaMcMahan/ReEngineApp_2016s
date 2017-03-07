@@ -36,7 +36,59 @@ void AppClass::Update(void)
 #pragma endregion
 
 #pragma region Your Code goes here
-	m_pMeshMngr->SetModelMatrix(IDENTITY_M4, "WallEye");
+	static int number = 0;
+	int number2 = number + 1;
+	if (number2 == 11)
+	{
+		number2 = 0;
+	}
+
+	//Timers!!! This is in seconds
+	static DWORD timerSinceBoot = GetTickCount();
+	DWORD timerSinceStart = GetTickCount() - timerSinceBoot;
+	float fTimer = timerSinceStart / 1000.0f;
+
+	vector3 list[] = {
+		vector3(-4.0f, -2.0f, 5.0f),
+		vector3(1.0f, -2.0f, 5.0f),
+		vector3(-3.0f, -1.0f, 3.0f),
+		vector3(2.0f, -1.0f, 3.0f),
+		vector3(-2.0f, 0.0f, 0.0f),
+		vector3(3.0f, 0.0f, 0.0f),
+		vector3(-1.0f, 1.0f, -3.0f),
+		vector3(4.0f, 1.0f, -3.0f),
+		vector3(0.0f, 2.0f, -5.0f),
+		vector3(5.0f, 2.0f, -5.0f),
+		vector3(1.0f, 3.0f, -5.0f) };
+
+	for (int i = 0; i < 10; i++)
+	{
+		matrix4 m4SpherePosition = glm::translate(list[i]) * glm::scale(vector3(0.1));
+		m_pMeshMngr->AddSphereToRenderList(m4SpherePosition, RERED, WIRE | SOLID);
+	}
+
+	vector3 v3Start = list[number];
+	vector3 v3End = list[number2];
+	float percentage = MapValue(fTimer, 0.0f, 2.0f, 0.0f, 1.0f);
+	vector3 v3Current = glm::lerp(v3Start, v3End, percentage);
+
+	matrix4 WallMat = glm::translate(v3Current);
+	m_pMeshMngr->SetModelMatrix(WallMat, "WallEye");
+
+	m_pMeshMngr->PrintLine("");
+	m_pMeshMngr->PrintLine(std::to_string(fTimer));
+	m_pMeshMngr->PrintLine(std::to_string(percentage));
+
+	if (percentage >= 1.0f)
+	{
+		timerSinceBoot = GetTickCount();
+		number += 1;
+		if (number > 10)
+		{
+			number = 0;
+		}
+	}
+
 #pragma endregion
 
 #pragma region Does not need changes but feel free to change anything here
@@ -50,7 +102,7 @@ void AppClass::Update(void)
 	m_pMeshMngr->PrintLine("");
 	m_pMeshMngr->PrintLine(m_pSystem->GetAppName(), REYELLOW);
 	m_pMeshMngr->Print("FPS:");
-	m_pMeshMngr->Print(std::to_string(nFPS), RERED);
+	m_pMeshMngr->PrintLine(std::to_string(nFPS), RERED);
 #pragma endregion
 }
 
