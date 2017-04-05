@@ -1,31 +1,32 @@
 #include "AppClass.h"
 void AppClass::InitWindow(String a_sWindowName)
 {
-	super::InitWindow("3D Transformations");
-	m_v4ClearColor = vector4(0.0f, 0.0f, 0.0f, 0.0f);
+	super::InitWindow("W7R_SLERP_DEMO"); // Window Name
+
+										 // Set the clear color based on Microsoft's CornflowerBlue (default in XNA)
+										 //if this line is in Init Application it will depend on the .cfg file, if it
+										 //is on the InitVariables it will always force it regardless of the .cfg
+	m_v4ClearColor = vector4(0.4f, 0.6f, 0.9f, 0.0f);
+	m_pSystem->SetWindowResolution(RESOLUTIONS::C_1280x720_16x9_HD);
+	//m_pSystem->SetWindowFullscreen(); //Sets the window to be fullscreen
+	//m_pSystem->SetWindowBorderless(true); //Sets the window to not have borders
 }
 
 void AppClass::InitVariables(void)
 {
-	m_m4Sun = IDENTITY_M4;
-	m_m4Earth = IDENTITY_M4;
-	m_m4Moon = IDENTITY_M4;
-
-	m_pSun = new PrimitiveClass();
-	m_pEarth = new PrimitiveClass();
-	m_pMoon = new PrimitiveClass();
-
-	m_pSun->GenerateSphere(5.936f, 5, REYELLOW);
-	m_pEarth->GenerateTube(0.524f, 0.45f, 0.3f, 10, REBLUE);
-	m_pMoon->GenerateTube(0.524f * 0.27f, 0.45f * 0.27f, 0.3f * 0.27f, 10, REWHITE);
+	//Reset the selection to -1, -1
+	m_selection = std::pair<int, int>(-1, -1);
+	//Set the camera position
+	m_pCameraMngr->SetPositionTargetAndView(
+		vector3(0.0f, 2.5f, 15.0f),//Camera position
+		vector3(0.0f, 2.5f, 0.0f),//What Im looking at
+		REAXISY);//What is up
+				 //Load a model onto the Mesh manager
+	m_pMeshMngr->LoadModel("Minecraft\\Cow.obj", "Cow");
 }
 
 void AppClass::Update(void)
 {
-#pragma region Does not need changes
-	//Sets the camera
-	m_pCameraMngr->SetPositionTargetAndView(vector3(0.0f, 25.0f, 0.0f), vector3(0.0f, 0.0f, 0.0f), -REAXISZ);
-
 	//Update the system's time
 	m_pSystem->UpdateTime();
 
@@ -39,56 +40,41 @@ void AppClass::Update(void)
 	//Call the arcball method
 	ArcBall();
 
-	//This matrices will just orient the objects to the camera
-	matrix4 rotateX = glm::rotate(IDENTITY_M4, 90.0f, vector3(1.0f, 0.0f, 0.0f));
-	matrix4 rotateY = glm::rotate(IDENTITY_M4, 90.0f, vector3(0.0f, 1.0f, 0.0f));
+	//Set the model matrix for the first model to be the arcball
+	m_pMeshMngr->SetModelMatrix(ToMatrix4(m_qArcBall), 0);
 
-	//This matrices will hold the relative transformation of the Moon and the Earth
-	matrix4 distanceEarth = glm::translate(11.0f, 0.0f, 0.0f);
-	matrix4 distanceMoon = glm::translate(2.0f, 0.0f, 0.0f);
-#pragma endregion
+	glm::quat q1 = glm::angleAxis(0.0f, vector3(0.0f, 0.0f, 1.0f));
+	quaternion q2 = glm::angleAxis(359.0f, vector3(0.0f, 0.0f, 1.0f));
+	quaternion q3;
 
-#pragma region YOUR CODE GOES HERE
-	//Calculate the position of the Earth
-	m_m4Earth = glm::translate(IDENTITY_M4 * rotateX, vector3());
-	m_m4Earth = glm::translate(m_m4Earth, vector3(11 * -cos(m_fEarthTimer / 62), 11 * sin(m_fEarthTimer / 62), 0.0f));
-	m_m4Earth = glm::rotate(m_m4Earth, 90.0f, vector3(0.0f,1.0f,0.0f));
-	m_m4Earth = glm::rotate(m_m4Earth, (m_fEarthTimer * 90.0f), vector3(1.0f, 0.0f, 0.0f));
-	
-	//Calculate the position of the Moon
-	m_m4Moon = glm::translate(m_m4Earth, vector3(2, 2, 0.0f));
-#pragma endregion
+	static float fTimer = 0.0f;
+	q3 = glm::mix(q1, q2, fTimer);
+	fTimer += 0.01f;
 
-#pragma region Print info
-	printf("Earth Day: %.3f, Moon Day: %.3f\r", m_fEarthTimer, m_fMoonTimer);//print the Frames per Second
-	
+	m_pMeshMngr->SetModelMatrix(ToMatrix4(q3), "Cow");
+
+	//Adds all loaded instance to the render list
+	m_pMeshMngr->AddSkyboxToRenderList();
+	m_pMeshMngr->AddInstanceToRenderList("ALL");
+
 	//Indicate the FPS
 	int nFPS = m_pSystem->GetFPS();
+	//print info into the console
+	//printf("FPS: %d            \r", nFPS);//print the Frames per Second
 	//Print info on the screen
-	m_pMeshMngr->PrintLine("");
 	m_pMeshMngr->PrintLine(m_pSystem->GetAppName(), REYELLOW);
-	m_pMeshMngr->Print("Earth Day: ", REWHITE);
-	m_pMeshMngr->PrintLine(std::to_string(m_fEarthTimer), REBLUE);
-	m_pMeshMngr->Print("Moon Day: ", REWHITE);
-	m_pMeshMngr->PrintLine(std::to_string(m_fMoonTimer), REBLUE);
+
+	m_pMeshMngr->Print("Selection: ");
+	m_pMeshMngr->PrintLine(m_pMeshMngr->GetInstanceGroupName(m_selection.first, m_selection.second), REYELLOW);
+
 	m_pMeshMngr->Print("FPS:");
 	m_pMeshMngr->Print(std::to_string(nFPS), RERED);
-#pragma endregion
-
-	m_fMoonTimer++;//Increase Moon timer
-	m_fEarthTimer = m_fMoonTimer / 28.0f; //divide by the moon's day
 }
 
 void AppClass::Display(void)
 {
 	//clear the screen
 	ClearScreen();
-
-	//Renders the meshes using the specified position given by the matrix and in the specified color
-	m_pSun->Render(m_pCameraMngr->GetProjectionMatrix(), m_pCameraMngr->GetViewMatrix(), m_m4Sun);
-	m_pEarth->Render(m_pCameraMngr->GetProjectionMatrix(), m_pCameraMngr->GetViewMatrix(), m_m4Earth);
-	m_pMoon->Render(m_pCameraMngr->GetProjectionMatrix(), m_pCameraMngr->GetViewMatrix(), m_m4Moon);
-	
 	//Render the grid based on the camera's mode:
 	m_pMeshMngr->AddGridToRenderListBasedOnCamera(m_pCameraMngr->GetCameraMode());
 	m_pMeshMngr->Render(); //renders the render list
@@ -98,9 +84,5 @@ void AppClass::Display(void)
 
 void AppClass::Release(void)
 {
-	SafeDelete(m_pEarth);
-	SafeDelete(m_pMoon);
-	SafeDelete(m_pSun);
-
 	super::Release(); //release the memory of the inherited fields
 }
