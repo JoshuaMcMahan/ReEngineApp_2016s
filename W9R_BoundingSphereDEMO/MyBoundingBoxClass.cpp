@@ -49,6 +49,7 @@ MyBoundingBoxClass::MyBoundingBoxClass(std::vector<vector3> vertexList)
 
 	m_v3MinG = m_v3Min;
 	m_v3MaxG = m_v3Max;
+	m_v3SizeG = m_v3MaxG - m_v3MinG;
 	
 	//m_v3Size.x = glm::distance(vector3(m_v3Min.x, 0.0, 0.0), vector3(m_v3Max.x, 0.0, 0.0));
 	//m_v3Size.y = glm::distance(vector3(0.0, m_v3Min.y, 0.0), vector3(0.0, m_v3Max.y, 0.0));
@@ -66,7 +67,14 @@ void MyBoundingBoxClass::RenderSphere()
 		glm::translate(m_v3CenterLocal) *
 		glm::scale(m_v3Size),
 		v3Color, WIRE);
+
+	m_pMeshMngr->AddCubeToRenderList(
+		m_m4ToWorld *
+		glm::translate(m_v3CenterLocal) *
+		glm::scale(m_v3SizeG),
+		REORANGE, WIRE);
 }
+
 void MyBoundingBoxClass::SetModelMatrix(matrix4 a_m4ToWorld)
 {
 	if (m_m4ToWorld == a_m4ToWorld)
